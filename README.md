@@ -3,7 +3,9 @@ Irish Election Visualization
 Title - Visualizing the 2020 Irish Election Data for Galway
 
 The datasets used are:
+
 2016 election data source: https://www.oireachtas.ie/en/elections/
+
 2020 election data: Galway West -  Fine Gael  Party officials
 
 A goal of this project is to visualize the 2016 and 2020 election results. The visualizatio is created based on the following factors:
