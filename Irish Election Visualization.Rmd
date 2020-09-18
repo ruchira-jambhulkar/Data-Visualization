@@ -1,0 +1,447 @@
+---
+title: "Irish Election Visualization"
+author: "Ruchira Jambhulkar"
+date: "01/03/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Importing required libraries
+library(readxl)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+#Reading 2016 election data
+
+data_2016 <- read.csv(file ="D:/Study/sem 2/Data Visualization/Assignment3_code (1)/Assignment3_code/2016-04-28_general-election-count-details-galway-west-csv_en.csv",na.strings = c("","NA"))
+
+View(data_2016)
+```
+
+```{r}
+#Using fill functiom to fill the empty result values
+data_2016 <- fill(data_2016, Result, .direction = c("up"))
+data_2016
+```
+
+```{r}
+#Using filter function to filter the data based on count 1
+data_2016_update <- filter(data_2016, Count.Number == 1)
+data_2016_update
+```
+
+```{r}
+#Using paste function to combine the coulmns 
+data_2016_update$Candidate <- paste(data_2016_update$Candidate.First.Name, " ", data_2016_update$Candidate.surname)
+data_2016_update
+```
+
+```{r}
+#Removing the unwanted columns
+data_2016_update <- data_2016_update[,-c(1:7,9)]
+data_2016_update
+```
+
+```{r}
+#Renaming the column
+names(data_2016_update)[1] <- "Votes"
+data_2016_update
+```
+
+```{r}
+#Inserting the Year column
+Year = 2016
+data_2016_update$Year <- Year
+data_2016_update
+```
+
+
+```{r}
+#Reading the 2020 election data
+data_2020 <- read_xlsx("D:/Study/sem 2/Data Visualization/Assignment3_code (1)/Assignment3_code/GalwayWest-2020.xlsx")
+
+data_2020
+
+```
+
+```{r}
+#Removing the unwanted rows and column
+data_2020 <- data_2020[-c(1,1)]
+data_2020 <- data_2020[-c(17),]
+
+#Using the first row as header
+names(data_2020) <- data_2020[1,]
+
+#Removing the first row
+data_2020 <- data_2020[-1,]
+
+#Renaming the first column to Party
+names(data_2020)[1] <- "Party"
+data_2020
+
+```
+
+```{r}
+#Using gather function for count
+data_2020 <- gather(data_2020,key = Count,value = Votes, "Count 1":"Count 13")
+data_2020
+```
+
+```{r}
+
+#Inserting 0 for empty values
+data_2020$Votes <- as.numeric(data_2020$Votes)
+data_2020$Votes[data_2020$Votes == ""] <- 'NA'
+data_2020[is.na(data_2020)] <- 0
+data_2020
+```
+
+```{r}
+#Filtering the data on the basis on count=1
+data_2020_update <- filter(data_2020, Count == "Count 1")
+data_2020_update
+```
+
+```{r}
+#Removing unwanted columns
+data_2020_update <- data_2020_update[,-c(3:4)]
+data_2020_update
+```
+
+```{r}
+#Inserting year column
+Year <- c(2020)
+data_2020_update$Year <- Year
+data_2020_update
+```
+
+```{r}
+data_2020_update$Party[data_2020_update$Party == 'Independent'] <- 'Ind'
+
+```
+
+```{r}
+#Data required for plotting 2016 election votes per party
+plot1_2016 <- data_2016_update %>% group_by(Party)%>%
+    summarise(Votes=sum(as.numeric(Votes)))
+plot1_2016
+```
+
+```{r}
+
+#Using ggplot to plot the 2016 election data
+theme_set(theme_classic())
+
+ggplot(plot1_2016, (aes(x= Party , y=Votes))) + 
+  geom_col(fill = "#66c2a5", alpha=0.85, width = 0.7) +
+  ylab(label = "Votes")+
+  xlab(label = "Party") +
+  ggtitle("Votes per party for 2016 election")+
+  
+    theme(
+      plot.title = element_text(color="red", size=14, face="bold"),
+      axis.line.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      axis.line.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+      #axis.title.x = element_blank(),
+      plot.margin = margin(3, 6, 3, 3),
+      panel.grid.major.y = element_line(size = 0.2, linetype = 'solid',colour = "lightgrey")
+      
+    )
+```
+
+```{r}
+#Data required for plotting 2020 election data
+
+plot1_2020 <- data_2020_update %>% group_by(Party)%>%
+    summarise(Votes=sum(as.numeric(Votes)))
+plot1_2020
+```
+
+
+```{r}
+
+#Using ggplot to plot 2020 election data
+
+theme_set(theme_classic())
+
+ggplot(plot1_2020, (aes(x= Party , y=Votes))) + 
+  geom_col(fill = "#66c2a5", alpha=0.85, width = 0.7) +
+  xlab(label = "Party")+
+  ylab(label = "Votes")+
+  ggtitle("Votes per party for 2020 election")+
+    theme(
+       plot.title = element_text(color="red", size=14, face="bold"),
+      axis.line.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      axis.line.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+      #axis.title.x = element_blank(),
+      plot.margin = margin(3, 6, 3, 3),
+      panel.grid.major.y = element_line(size = 0.2, linetype = 'solid',colour = "lightgrey"))
+
+```
+
+```{r}
+
+#Merging the dataframes
+
+result_df <- merge(data_2016_update,data_2020_update, all.x = T, all.y = T)
+result_df
+
+```
+```{r}
+
+#Using group_by function to group the data by Party and Year
+
+result_df <- result_df %>% 
+  group_by(Party,Year) %>%
+  summarise(Votes = sum(as.numeric(Votes)))
+
+result_df$Party[result_df$Party == 'Sinn Féin'] <- 'Sinn Fein'
+result_df$Party[result_df$Party == 'Social Democratic Party'] <- 'Social Democrats'
+result_df$Party[result_df$Party == 'Fianna Fáil'] <- 'Fianna Fail'
+result_df$Party[result_df$Party == 'Fine  Gael'] <- 'Fine Gael'
+
+View(result_df)
+
+```
+
+
+```{r}
+#Using spread function to get the votes for 2016 and 2020
+
+result_untidy <- spread(result_df,Year,Votes)
+result_untidy
+```
+
+```{r}
+
+#Filling the empty values by 0
+
+result_untidy$`2016`<- as.numeric(result_untidy$`2016`)
+result_untidy$`2020`<- as.numeric(result_untidy$`2020`)
+result_untidy[is.na(result_untidy)] <- 0
+result_untidy
+
+```
+
+```{r}
+
+#Calculating change in votes
+
+result_untidy$change_in_votes <- (result_untidy$`2020` - result_untidy$`2016`)
+result_untidy
+```
+
+
+```{r}
+
+#Using mutate to add new column above
+result_votes_diff <- result_untidy %>% 
+   mutate(above = ifelse(change_in_votes > 0, TRUE, FALSE))%>%
+  arrange(change_in_votes)
+```
+
+
+```{r}
+
+#Using ggplot to plot the graph between change in votes per party
+
+ggplot(result_votes_diff, aes(x= change_in_votes, y=Party, colour = above)) +
+        geom_segment(aes(x = 0, y = Party, xend = change_in_votes, yend = Party), size = 0.6, color = "darkgrey") +
+        geom_point(size =2.5) +
+  
+  geom_text(aes(label=Party), vjust=-1.2, size=2, na.rm = TRUE, show.legend = FALSE)+ 
+  
+   scale_x_continuous(limits = c(-6000, 6000),
+                     expand = c(0, 0),
+                     name = "Change in votes per party",
+                     breaks = seq(-5000,5000, by = 1000)) +
+  
+   scale_colour_manual(values= c("#0007df","#f30017")) +
+  
+  
+  theme(axis.line.y = element_blank(),
+        panel.grid.major.x = element_line(size=0.04, colour = "grey50"),
+    axis.line.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "None",
+    axis.title.x = element_text(size = 9))
+```
+
+
+```{r}
+
+#Reading the data for national averages
+
+national_data <- read.csv(file="D:/Study/sem 2/Data Visualization/Assignment3_code (1)/Assignment3_code/National_Average.csv")
+national_data
+
+```
+```{r}
+#Renaming the first column to Party
+names(national_data)[1] <- "Party"
+national_data$Party <- as.character(national_data$Party)
+national_data
+```
+
+```{r}
+#Reading the data for 2020 election
+
+data_2020_election <- plot1_2020
+data_2020_election
+```
+
+```{r}
+#Calculating vote percentage
+
+data_2020_election$Percent.Vote <- data_2020_election$Votes / sum(data_2020_election$Votes) *100
+data_2020_election
+```
+
+
+```{r}
+#Adding the Election column
+
+Election <- c("Galway-West2020")
+data_2020_election$Election <- Election
+data_2020_election <- data_2020_election[,-c(2)]
+data_2020_election
+```
+
+```{r}
+
+#Using merge function to merge the data
+
+election_data <- merge(data_2020_election,national_data, all.x = T, all.y = T)
+
+election_data$Party[election_data$Party == 'AontÃº'] <- 'Aontú'
+election_data$Party[election_data$Party == 'Solidarityâ\200“PBP'] <- 'Solidarity–PBP'
+
+election_data
+
+```
+
+```{r}
+
+#Using ggplot to plot the graph to compare the percentages with national average values
+
+theme_set(theme_classic())
+
+ggplot(election_data, (aes(x= Party, y=Percent.Vote, fill=Election))) + 
+ geom_col(position="dodge", alpha=0.85) +
+  ylab(label = "Percent vote")+
+  xlab(label = "Party") +
+  scale_fill_manual(values = c("#fc8d62","#66c2a5" ), name = NULL) +
+  ggtitle("Comparison between the national average and party vote share")+
+  
+    theme(
+      plot.title = element_text(color="red", size=12, face="bold"),
+      axis.line.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      axis.line.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+      #axis.title.x = element_blank(),
+      plot.margin = margin(3, 6, 3, 3),
+      panel.grid.major.y = element_line(size = 0.2, linetype = 'solid',colour = "lightgrey"),
+    legend.position= c(0.9, 0.9), legend.direction="vertical") 
+```
+
+
+```{r}
+
+#Handling the differences in candidate names
+
+Encoding(data_2016_update$Candidate) <- "UTF-8"
+
+data_2016_update$Candidate[data_2016_update$Candidate == "Éamon   O'Cuív"] <- "Éamon Ó Cuív"
+data_2016_update$Candidate[data_2016_update$Candidate == "Noel   Grealish"] <- "Noel Grealish"
+data_2016_update$Candidate[data_2016_update$Candidate == "Catherine Martina Ann   Connolly"] <- "Catherine Connolly"
+data_2016_update$Candidate[data_2016_update$Candidate == "Hildegarde   Naughton"] <- "Hildegarde Naughton"
+data_2016_update$Candidate[data_2016_update$Candidate == "Sean   Kyne"] <- "Seán Kyne"
+data_2016_update$Candidate[data_2016_update$Candidate == "Niall   O' Tuathail"] <- "Niall Ó Tuathail"
+data_2016_update$Candidate[data_2016_update$Candidate == "Mike   Cubbard"] <- "Mike Cubbard"
+data_2016_update$Candidate[data_2016_update$Candidate == "Mike   Cubbard"] <- "Mike Cubbard"
+
+
+```
+
+
+```{r}
+#Using merge function to merge the dataframe by Candidate
+candidate_df <- merge(data_2016_update,data_2020_update, by = "Candidate")
+candidate_df
+```
+
+
+```{r}
+#Removing unwanted columns
+candidate_df <- candidate_df[,-c(3:5)]
+candidate_df
+
+```
+
+```{r}
+#Inserting new column of change in votes
+candidate_df$Votes.y <- as.numeric(candidate_df$Votes.y)
+candidate_df$changed_votes_candidate <- (candidate_df$Votes.y - candidate_df$Votes.x)
+candidate_df
+```
+
+```{r}
+#Using mutate to add new column above
+candidate_df<- candidate_df %>% 
+   mutate(above1 = ifelse(changed_votes_candidate > 0, TRUE, FALSE))%>%
+  arrange(changed_votes_candidate)
+
+```
+
+
+```{r}
+
+#Using ggplot to plot the diverging plot between change in vote per candidate
+
+ggplot(candidate_df, aes(x= changed_votes_candidate, y=Candidate, colour = above1)) +
+        geom_segment(aes(x = 0, y = Candidate, xend = changed_votes_candidate, yend = Candidate), size = 0.6, color = "darkgrey") +
+        geom_point(size =2.5) +
+  
+  geom_text(aes(label=Candidate), vjust=-1.2, size=2, na.rm = TRUE, show.legend = FALSE)+ 
+  
+   scale_x_continuous(limits = c(-2000, 2000),
+                     expand = c(0, 0),
+                     name = "Change in votes per candidate",
+                     breaks = seq(-2000,2000, by = 500)) +
+  
+   scale_colour_manual(values= c("#6221de","#f010a1")) +
+  
+  
+  theme(axis.line.y = element_blank(),
+        panel.grid.major.x = element_line(size=0.04, colour = "grey50"),
+    axis.line.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "None",
+    axis.title.x = element_text(size = 9))
+
+```
+
+
+
+
